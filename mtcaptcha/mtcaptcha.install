@@ -1,0 +1,19 @@
+<?php
+
+/**
+ * @file
+ * Installation file for MTCaptcha module.
+ */
+
+/**
+ * Implements hook_uninstall().
+ */
+function mtcaptcha_uninstall() {
+  variable_del('mtcaptcha_site_key');
+  variable_del('mtcaptcha_private_key');
+  variable_del('mtcaptcha_theme');
+  variable_del('mtcaptcha_language');
+  variable_del('mtcaptcha_widgetsize');
+  variable_del('mtcaptcha_enable');
+  variable_del('mtcaptcha_other_enable');
+}

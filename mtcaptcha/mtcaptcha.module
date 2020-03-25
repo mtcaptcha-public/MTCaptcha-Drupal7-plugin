@@ -1,0 +1,196 @@
+<?php
+
+/**
+ * @file
+ * Verifies if user is a human without necessity to solve a CAPTCHA.
+ */
+
+use Drupal\Core\Form\FormStateInterface;
+
+
+/**
+ * Implements hook_help().
+ */
+function mtcaptcha_help($path, $arg) {
+  switch ($path) {
+    case 'admin/config/mtcaptcha':
+      return t('<a href="@url">MTCaptcha</a>  is an efficient security solution to protect your website against spam comments and brute-force attacks.', array('@url' => 'https://www.mtcaptcha.com/'));
+  }
+}
+
+/**
+ * Implements hook_theme().
+ */
+function mtcaptcha_theme() {
+  return array(
+    'mtcaptcha_widget_noscript' => array(
+      'variables' => array(
+        'widget' => NULL,
+      ),
+      'template' => 'mtcaptcha-widget-noscript',
+    ),
+  );
+}
+
+/**
+ * Implements hook_menu().
+ */
+function mtcaptcha_menu() {
+  $items['admin/config/mtcaptcha'] = array(
+    'title' => 'MTCaptcha',
+    'description' => 'Administer MTCaptcha.',
+    'page callback' => 'drupal_get_form',
+    'page arguments' => array('mtcaptcha_admin_settings'),
+    'access arguments' => array('administer mtcaptcha'),
+    'type' => MENU_LOCAL_TASK,
+    'file' => 'mtcaptcha.admin.inc',
+    'weight' => 1,
+  );
+
+  return $items;
+}
+
+/**
+ * Implements hook_permission().
+ */
+function mtcaptcha_permission() {
+  return array(
+    'administer mtcaptcha' => array(
+      'title' => t('Administer MTCaptcha'),
+      'description' => t('Administer MTCaptcha settings'),
+    ),
+  );
+}
+
+function mtcaptcha_form_alter(&$form, &$form_state, $form_id) {
+  $mtcaptcha_other_enable = preg_split('/\s*,\s*/', trim(variable_get('mtcaptcha_other_enable', '')));
+  $enabled_forms = array_values(array_merge($mtcaptcha_other_enable, variable_get('mtcaptcha_enable', [])));
+  if(in_array($form_id, $enabled_forms, TRUE)){
+    mtcaptcha_render($form, $form_state, $form_id);
+    $form['#validate'][] = 'mtcaptcha_captcha_validation';
+  }
+}
+
+/**
+ * Implements hook_captcha().
+ */
+function mtcaptcha_render(&$form, &$form_state, $form_id) {
+  $mtcaptcha_site_key = variable_get('mtcaptcha_site_key', '');
+  $mtcaptcha_private_key = variable_get('mtcaptcha_private_key', '');
+  
+  if (!empty($mtcaptcha_site_key) && !empty($mtcaptcha_private_key)) {
+    $mtcaptcha_src = 'https://service.mtcaptcha.com/mtcv1/client/mtcaptcha.min.js';
+    $mtcaptcha_src_2 = 'https://service2.mtcaptcha.com/mtcv1/client/mtcaptcha.min.js';
+
+    $script = array(
+      '#tag' => 'script',
+      '#attributes' => array('type' => 'text/javascript'),
+      '#value' => 'var mtcaptchaConfig ='
+      .json_encode(array(
+              'sitekey' => $mtcaptcha_site_key,
+              'theme' => variable_get('mtcaptcha_theme', ''),
+              "autoFormValidate"  => (bool)true,
+              "widgetSize"        => variable_get('mtcaptcha_widgetsize', ''),
+              'lang' => variable_get('mtcaptcha_language', '')
+              )),
+     );
+     
+    drupal_add_html_head($script, 'script');  
+
+    $data = array(
+      '#tag' => 'script',
+      '#value' => '',
+      '#attributes' => array(
+        'src' => url($mtcaptcha_src, array('absolute' => TRUE)),
+        'async' => 'async',
+        'defer' => 'defer',
+      ),
+    );
+    $data2 = array(
+      '#tag' => 'script',
+      '#value' => '',
+      '#attributes' => array(
+        'src' => url($mtcaptcha_src_2, array('absolute' => TRUE)),
+        'async' => 'async',
+        'defer' => 'defer',
+      ),
+    );
+    drupal_add_html_head($data, 'mtcpatcha_api');
+    drupal_add_html_head($data2, 'mtcpatcha_api_2');
+    
+    drupal_flush_all_caches();
+    
+    $form['captcha_label'] = array(
+      '#type' => 'item',
+      '#title' => t('Captcha'),
+      '#required' => TRUE
+    );
+   
+    $form['captcha'] = array(
+      '#required' => TRUE,
+      '#markup' => '<div class="mtcaptcha"></div>'
+    ); 
+    return $form; 
+  }
+}
+
+/**
+ * CAPTCHA Callback; Validates the MTCaptcha code.
+ */
+function mtcaptcha_captcha_validation() {
+  $mtcaptcha_private_key = variable_get('mtcaptcha_private_key', '');
+  if (empty($_POST['mtcaptcha-verifiedtoken']) || empty($mtcaptcha_private_key)) {
+    return FALSE;
+  }
+  
+  $resp = mtcaptcha_submit_captcha($mtcaptcha_private_key, $_POST['mtcaptcha-verifiedtoken']);
+  $resp = json_decode($resp, false);
+
+  if ($resp->success) {
+    return TRUE;
+  } else {
+    $error_codes = array(
+      'token-expired' => t('The token has expired.'),
+      'token-duplicate-cal' => t('The token has been verified already.'),
+      'bad-request' => t('The request is invalid or malformed.'),
+      'missing-input-privatekey' => t('`privatekey` parameter is missing'),
+      'missing-input-token' => t(' ‘token’ parameter is missing.'),
+      'invalid-privatekey' => t('The private key is invalid or malformed.'),
+      'invalid-token' => t('The token parameter is invalid or malformed.'),
+      'invalid-token-faildecrypt' => t('The token parameter is invalid or malformed.'),
+      'privatekey-mismatch-token' => t('The token and the privatekey does not match.'),
+      'expired-sitekey-or-account'=> t('The sitekey/privatekey is no longer valid due to expiration or account closure.'),
+      'network-error' => t('Something went wrong!'),
+      'unknown-error' => t('Something went wrong!'),
+    );
+    foreach ($resp->fail_codes as $code) {
+      if (!isset($error_codes[$code])) {
+        $code = 'unknown-error';
+      }
+      form_set_error('mtcaptcha', $error_codes[$code]);
+      watchdog('MTCaptcha web service', '@error', array('@error' => $error_codes[$code]), WATCHDOG_ERROR);
+    }
+  }
+  return FALSE;
+}
+
+
+function mtcaptcha_submit_captcha($mt_captcha_site_private_key, $mtcaptcha_verifiedtoken) {
+  $options = array(
+    'method' => 'GET'
+  );
+
+  $response = drupal_http_request("https://service.mtcaptcha.com/mtcv1/api/checktoken?privatekey={$mt_captcha_site_private_key}&token={$mtcaptcha_verifiedtoken}", $options);
+  
+  if ($response->code == 200 && isset($response->data)) {
+    // The service request was successful.
+    return $response->data;
+  }elseif ($response->code < 0) {
+    // Negative status codes typically point to network or socket issues.
+    return '{"success": false, "error-codes": ["network-error"]}';
+  }else {
+    // Positive none 200 status code typically means the request has failed.
+    return $response->data;
+  }
+}
+

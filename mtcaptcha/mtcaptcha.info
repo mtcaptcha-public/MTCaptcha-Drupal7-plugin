@@ -1,0 +1,10 @@
+name = MTCaptcha
+description = Protect your website from spam and abuse while letting real people pass through with ease. 
+version = 1.0
+core = 7.x
+package = Spam control
+configure = admin/config/mtcaptcha
+php = 5.5
+
+
+
