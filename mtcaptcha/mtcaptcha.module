@@ -118,8 +118,6 @@ function mtcaptcha_render(&$form, &$form_state, $form_id) {
     drupal_add_html_head($data, 'mtcpatcha_api');
     drupal_add_html_head($data2, 'mtcpatcha_api_2');
     
-    drupal_flush_all_caches();
-    
     $form['captcha_label'] = array(
       '#type' => 'item',
       '#title' => t('Captcha'),
