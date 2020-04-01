@@ -132,22 +132,36 @@ function mtcaptcha_admin_settings() {
       'mini' => t('Modern Mini'),
     ],
     '#title' => t('Captcha Widget size'),
-    '#type' => 'select',
+    '#type' => 'select',    
   ];
+
+  $form['mtcaptcha_widget_settings']['mtcaptcha_enablecaptcha'] = array(
+    "#type" => "select",
+    "#title" => t("Enable MTCaptcha For"),
+    "#options" => array(
+      "all" => t("All Users"),
+      "login" => t("Logged In Users"),
+      "logout" => t("Logged Out Users"),      
+    ),    
+    "#default_value" => variable_get('mtcaptcha_enablecaptcha', "all"),
+    "#description" => t('<br> The MTCaptcha will be embedded in Login Form and 
+    Reset Password Form even though the Enable MTCaptcha is selected for logged <br> in users. If needed we can disable 
+    MTCaptcha for these forms by choosing below options')
+  );
 
   $form_ids = array(
     'user_login' => t('Login Form'),
     'user_register_form' => t('Registration Form'), 
     'user_pass' => t('Reset Password Form'),
-    'user_form' => t('Change Password Form'),
-    'comment_comment_form' => t('Comment Form'),
-    'contact_message_feedback_form' => t('Contact Form')
+    'user_profile_form' => t('Change Password Form'),
+    'comment_node_article_form' => t('Comment Form'),
+    'contact_site_form' => t('Contact Form')
   );
 
   $form['mtcaptcha_widget_settings']['mtcaptcha_enable'] = array(
     '#title' => t('MTCaptcha is applied for'),
     '#type' => 'checkboxes',
-    '#default_value' => variable_get('mtcaptcha_enable',  array_keys($form_ids)),
+    '#default_value' => variable_get('mtcaptcha_enable', array()),
     '#description' => t('Please enable MTCaptcha for above forms'),
     '#options' => $form_ids,
   );
@@ -156,8 +170,8 @@ function mtcaptcha_admin_settings() {
     '#type' => 'textfield',
     '#title' => t('Other Forms to Enable'),
     '#default_value' => variable_get('mtcaptcha_other_enable', ''),
+    '#description' => t('Please give other form ids mtcaptcha should be enabled'),
     '#maxlength' => 400,
-    '#description' => t('Please give other form ids mtcaptcha should be enabled')
   );
 
   return system_settings_form($form);

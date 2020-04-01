@@ -62,12 +62,30 @@ function mtcaptcha_permission() {
   );
 }
 
+
 function mtcaptcha_form_alter(&$form, &$form_state, $form_id) {
   $mtcaptcha_other_enable = preg_split('/\s*,\s*/', trim(variable_get('mtcaptcha_other_enable', '')));
   $enabled_forms = array_values(array_merge($mtcaptcha_other_enable, variable_get('mtcaptcha_enable', [])));
-  if(in_array($form_id, $enabled_forms, TRUE)){
+
+  $user = $GLOBALS['user'];
+  if(!$user->uid && $form_id == 'user_login' && in_array($form_id, $enabled_forms, TRUE) ){
     mtcaptcha_render($form, $form_state, $form_id);
     $form['#validate'][] = 'mtcaptcha_captcha_validation';
+    return false;    
+  }
+
+  if(!$user->uid && $form_id == 'user_pass' && in_array($form_id, $enabled_forms, TRUE) ){
+    mtcaptcha_render($form, $form_state, $form_id);
+    $form['#validate'][] = 'mtcaptcha_captcha_validation';
+    return false;
+  }
+  
+  if( in_array($form_id, $enabled_forms, TRUE) && 
+    (($user->uid && variable_get('mtcaptcha_enablecaptcha') == 'login') ||
+    (!$user->uid &&  variable_get('mtcaptcha_enablecaptcha') == 'logout') ||
+    (variable_get('mtcaptcha_enablecaptcha') == 'all'))) {      
+      mtcaptcha_render($form, $form_state, $form_id);
+      $form['#validate'][] = 'mtcaptcha_captcha_validation'; 
   }
 }
 
@@ -87,12 +105,12 @@ function mtcaptcha_render(&$form, &$form_state, $form_id) {
       '#attributes' => array('type' => 'text/javascript'),
       '#value' => 'var mtcaptchaConfig ='
       .json_encode(array(
-              'sitekey' => $mtcaptcha_site_key,
-              'theme' => variable_get('mtcaptcha_theme', ''),
-              "autoFormValidate"  => (bool)true,
-              "widgetSize"        => variable_get('mtcaptcha_widgetsize', ''),
-              'lang' => variable_get('mtcaptcha_language', '')
-              )),
+        'sitekey' => $mtcaptcha_site_key,
+        'theme' => variable_get('mtcaptcha_theme', ''),
+        "autoFormValidate"  => (bool)true,
+        "widgetSize"        => variable_get('mtcaptcha_widgetsize', ''),
+        'lang' => variable_get('mtcaptcha_language', '')
+        )),
      );
      
     drupal_add_html_head($script, 'script');  
@@ -117,18 +135,15 @@ function mtcaptcha_render(&$form, &$form_state, $form_id) {
     );
     drupal_add_html_head($data, 'mtcpatcha_api');
     drupal_add_html_head($data2, 'mtcpatcha_api_2');
-    
+      
     $form['captcha_label'] = array(
-      '#type' => 'item',
       '#title' => t('Captcha'),
-      '#required' => TRUE
+      '#type' => 'item'
     );
-   
     $form['captcha'] = array(
       '#required' => TRUE,
       '#markup' => '<div class="mtcaptcha"></div>'
-    ); 
-    return $form; 
+    );  
   }
 }
 
@@ -137,7 +152,10 @@ function mtcaptcha_render(&$form, &$form_state, $form_id) {
  */
 function mtcaptcha_captcha_validation() {
   $mtcaptcha_private_key = variable_get('mtcaptcha_private_key', '');
+  
   if (empty($_POST['mtcaptcha-verifiedtoken']) || empty($mtcaptcha_private_key)) {
+    form_set_error('mtcaptcha', 'The token parameter is invalid or malformed.');
+    watchdog('MTCaptcha web service', '@error', array('@error' => 'The token parameter is invalid or malformed.'), WATCHDOG_ERROR);
     return FALSE;
   }
   
@@ -174,6 +192,7 @@ function mtcaptcha_captcha_validation() {
 
 
 function mtcaptcha_submit_captcha($mt_captcha_site_private_key, $mtcaptcha_verifiedtoken) {
+
   $options = array(
     'method' => 'GET'
   );
