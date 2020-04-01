@@ -37,8 +37,8 @@ function mtcaptcha_theme() {
  */
 function mtcaptcha_menu() {
   $items['admin/config/mtcaptcha'] = array(
-    'title' => 'MTCaptcha',
-    'description' => 'Administer MTCaptcha.',
+    'title' => check_plain('MTCaptcha'),
+    'description' => check_plain('Administer MTCaptcha.'),
     'page callback' => 'drupal_get_form',
     'page arguments' => array('mtcaptcha_admin_settings'),
     'access arguments' => array('administer mtcaptcha'),
@@ -56,8 +56,8 @@ function mtcaptcha_menu() {
 function mtcaptcha_permission() {
   return array(
     'administer mtcaptcha' => array(
-      'title' => t('Administer MTCaptcha'),
-      'description' => t('Administer MTCaptcha settings'),
+      'title' => check_plain('Administer MTCaptcha'),
+      'description' => check_plain('Administer MTCaptcha settings'),
     ),
   );
 }
@@ -66,7 +66,7 @@ function mtcaptcha_permission() {
 function mtcaptcha_form_alter(&$form, &$form_state, $form_id) {
   $mtcaptcha_other_enable = preg_split('/\s*,\s*/', trim(variable_get('mtcaptcha_other_enable', '')));
   $enabled_forms = array_values(array_merge($mtcaptcha_other_enable, variable_get('mtcaptcha_enable', [])));
-
+  
   $user = $GLOBALS['user'];
   if(!$user->uid && $form_id == 'user_login' && in_array($form_id, $enabled_forms, TRUE) ){
     mtcaptcha_render($form, $form_state, $form_id);
@@ -88,6 +88,7 @@ function mtcaptcha_form_alter(&$form, &$form_state, $form_id) {
       $form['#validate'][] = 'mtcaptcha_captcha_validation'; 
   }
 }
+
 
 /**
  * Implements hook_captcha().
@@ -117,7 +118,7 @@ function mtcaptcha_render(&$form, &$form_state, $form_id) {
 
     $data = array(
       '#tag' => 'script',
-      '#value' => '',
+      '#value' => check_plain(''),
       '#attributes' => array(
         'src' => url($mtcaptcha_src, array('absolute' => TRUE)),
         'async' => 'async',
@@ -126,7 +127,7 @@ function mtcaptcha_render(&$form, &$form_state, $form_id) {
     );
     $data2 = array(
       '#tag' => 'script',
-      '#value' => '',
+      '#value' => check_plain(''),
       '#attributes' => array(
         'src' => url($mtcaptcha_src_2, array('absolute' => TRUE)),
         'async' => 'async',
@@ -137,8 +138,9 @@ function mtcaptcha_render(&$form, &$form_state, $form_id) {
     drupal_add_html_head($data2, 'mtcpatcha_api_2');
       
     $form['captcha_label'] = array(
-      '#title' => t('Captcha'),
-      '#type' => 'item'
+      '#title' => check_plain('Captcha'),
+      '#type' => 'item',
+      '#required' => TRUE,
     );
     $form['captcha'] = array(
       '#required' => TRUE,
@@ -166,18 +168,18 @@ function mtcaptcha_captcha_validation() {
     return TRUE;
   } else {
     $error_codes = array(
-      'token-expired' => t('The token has expired.'),
-      'token-duplicate-cal' => t('The token has been verified already.'),
-      'bad-request' => t('The request is invalid or malformed.'),
-      'missing-input-privatekey' => t('`privatekey` parameter is missing'),
-      'missing-input-token' => t(' ‘token’ parameter is missing.'),
-      'invalid-privatekey' => t('The private key is invalid or malformed.'),
-      'invalid-token' => t('The token parameter is invalid or malformed.'),
-      'invalid-token-faildecrypt' => t('The token parameter is invalid or malformed.'),
-      'privatekey-mismatch-token' => t('The token and the privatekey does not match.'),
-      'expired-sitekey-or-account'=> t('The sitekey/privatekey is no longer valid due to expiration or account closure.'),
-      'network-error' => t('Something went wrong!'),
-      'unknown-error' => t('Something went wrong!'),
+      'token-expired' => check_plain('The token has expired.'),
+      'token-duplicate-cal' => check_plain('The token has been verified already.'),
+      'bad-request' => check_plain('The request is invalid or malformed.'),
+      'missing-input-privatekey' => check_plain('`privatekey` parameter is missing'),
+      'missing-input-token' => check_plain(' ‘token’ parameter is missing.'),
+      'invalid-privatekey' => check_plain('The private key is invalid or malformed.'),
+      'invalid-token' => check_plain('The token parameter is invalid or malformed.'),
+      'invalid-token-faildecrypt' => check_plain('The token parameter is invalid or malformed.'),
+      'privatekey-mismatch-token' => check_plain('The token and the privatekey does not match.'),
+      'expired-sitekey-or-account'=> check_plain('The sitekey/privatekey is no longer valid due to expiration or account closure.'),
+      'network-error' => check_plain('Something went wrong!'),
+      'unknown-error' => check_plain('Something went wrong!'),
     );
     foreach ($resp->fail_codes as $code) {
       if (!isset($error_codes[$code])) {
