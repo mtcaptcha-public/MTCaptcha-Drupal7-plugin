@@ -17,4 +17,5 @@ function mtcaptcha_uninstall() {
   variable_del('mtcaptcha_enable');
   variable_del('mtcaptcha_other_enable');
   variable_del('mtcaptcha_enablecaptcha');
+  variable_del('show_captcha_label_form');
 }
