@@ -5,6 +5,7 @@ core = 7.x
 package = Spam control
 configure = admin/config/mtcaptcha
 php = 5.5
-
+scripts[] = mtcaptcha-global.js
+stylesheets[all][] = mtcaptcha-global.css
 
 

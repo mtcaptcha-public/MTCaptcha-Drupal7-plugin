@@ -68,6 +68,12 @@ function mtcaptcha_form_alter(&$form, &$form_state, $form_id) {
   $enabled_forms = array_values(array_merge($mtcaptcha_other_enable, variable_get('mtcaptcha_enable', [])));
   
   $user = $GLOBALS['user'];
+  
+  if($form_id == 'mtcaptcha_admin_settings') {
+    $form['#validate'][] = 'mtcaptcha_captcha_admin_validation';
+    return false;
+   }
+
   if(!$user->uid && $form_id == 'user_login' && in_array($form_id, $enabled_forms, TRUE) ){
     mtcaptcha_render($form, $form_state, $form_id);
     $form['#validate'][] = 'mtcaptcha_captcha_validation';
@@ -89,66 +95,98 @@ function mtcaptcha_form_alter(&$form, &$form_state, $form_id) {
   }
 }
 
+  /**
+  * Method to validate captcha while form submission
+  * @param form
+  * @param form_state
+ */ 
+function mtcaptcha_captcha_admin_validation(&$form,  &$form_state) {
+  $custom_config  = $form_state['values']['custom_config_enable'];
+  $site_key  = $form_state['values']['mtcaptcha_site_key'];
+  if(!$custom_config && trim($site_key) == "") {
+    $form['general']['mtcaptcha_site_key']['#required'] = TRUE;
+    $form['general']['mtcaptcha_site_key']['#attributes'] = array(
+      'class' => array('error'), 
+    );   
+    form_set_error('mtcaptcha', 'Site key is required');
+    return false;
+  } else {
+    $form['general']['mtcaptcha_site_key']['#required'] = FALSE;
+    return true;
+  }
+}
 
 /**
  * Implements hook_captcha().
  */
 function mtcaptcha_render(&$form, &$form_state, $form_id) {
   $mtcaptcha_site_key = variable_get('mtcaptcha_site_key', '');
-  $mtcaptcha_private_key = variable_get('mtcaptcha_private_key', '');
+  $mtcaptcha_private_key = variable_get('mtcaptcha_private_key','');
   
   if (!empty($mtcaptcha_site_key) && !empty($mtcaptcha_private_key)) {
-    $mtcaptcha_src = 'https://service.mtcaptcha.com/mtcv1/client/mtcaptcha.min.js';
-    $mtcaptcha_src_2 = 'https://service2.mtcaptcha.com/mtcv1/client/mtcaptcha.min.js';
+    $custome_config_enble = variable_get('custom_config_enable');
+    if($custome_config_enble == TRUE) {    
+      $script = array(
+        '#tag' => 'script',
+        '#attributes' => array('type' => 'text/javascript'),
+        '#value' => variable_get('custom_config_setting')
+      );      
+      drupal_add_html_head($script, 'script');
+    }else {
+      $mtcaptcha_src = 'https://service.mtcaptcha.com/mtcv1/client/mtcaptcha.min.js';
+      $mtcaptcha_src_2 = 'https://service2.mtcaptcha.com/mtcv1/client/mtcaptcha.min.js';
+      $script = array(
+        '#tag' => 'script',
+        '#attributes' => array('type' => 'text/javascript'),
+        '#value' => 'var mtcaptchaConfig ='
+        .json_encode(array(
+          'sitekey' => $mtcaptcha_site_key,
+          'theme' => variable_get('mtcaptcha_theme', ''),
+          "autoFormValidate"  => (bool)true,
+          "renderQueue"       => $GLOBALS['_configIdList'],  
+          "widgetSize"        => variable_get('mtcaptcha_widgetsize', ''),
+          'lang' => variable_get('mtcaptcha_language', '')
+          )),
+       );
 
-    $script = array(
-      '#tag' => 'script',
-      '#attributes' => array('type' => 'text/javascript'),
-      '#value' => 'var mtcaptchaConfig ='
-      .json_encode(array(
-        'sitekey' => $mtcaptcha_site_key,
-        'theme' => variable_get('mtcaptcha_theme', ''),
-        "autoFormValidate"  => (bool)true,
-        "widgetSize"        => variable_get('mtcaptcha_widgetsize', ''),
-        'lang' => variable_get('mtcaptcha_language', '')
-        )),
-     );
-     
-    drupal_add_html_head($script, 'script');  
+       drupal_add_html_head($script, 'script');
 
-    $data = array(
-      '#tag' => 'script',
-      '#value' => t(''),
-      '#attributes' => array(
-        'src' => url($mtcaptcha_src, array('absolute' => TRUE)),
-        'async' => 'async',
-        'defer' => 'defer',
-      ),
-    );
-    $data2 = array(
-      '#tag' => 'script',
-      '#value' => t(''),
-      '#attributes' => array(
-        'src' => url($mtcaptcha_src_2, array('absolute' => TRUE)),
-        'async' => 'async',
-        'defer' => 'defer',
-      ),
-    );
-    drupal_add_html_head($data, 'mtcpatcha_api');
-    drupal_add_html_head($data2, 'mtcpatcha_api_2');
-    
-    if(variable_get('show_captcha_label_form') == TRUE){
-      $form['captcha_label'] = array(
-        '#title' => t('Captcha'),
-        '#type' => 'item',
+        $data = array(
+          '#tag' => 'script',
+          '#value' => t(''),
+          '#attributes' => array(
+            'src' => url($mtcaptcha_src, array('absolute' => TRUE)),
+            'async' => 'async',
+            'defer' => 'defer',
+          ),
+        );
+        $data2 = array(
+          '#tag' => 'script',
+          '#value' => t(''),
+          '#attributes' => array(
+            'src' => url($mtcaptcha_src_2, array('absolute' => TRUE)),
+            'async' => 'async',
+            'defer' => 'defer',
+          ),
+        );
+        drupal_add_html_head($data, 'mtcpatcha_api');
+        drupal_add_html_head($data2, 'mtcpatcha_api_2');
+    }
+
+    $show_label = variable_get('show_captcha_label_form');   
+
+    if($show_label== TRUE) {
+      $form['captcha'] = array(
         '#required' => TRUE,
+        '#markup' => '<label>' . t('Captcha<span class="red">*</span>') . '</label><div class="mtcaptcha"></div>'
+      );
+    } else {
+      $form['captcha'] = array(
+        '#required' => TRUE,
+        '#markup' => '<div class="mtcaptcha"></div>'
       );
     }
-    
-    $form['captcha'] = array(
-      '#required' => TRUE,
-      '#markup' => '<div class="mtcaptcha"></div>'
-    );
+   
   }
 }
 

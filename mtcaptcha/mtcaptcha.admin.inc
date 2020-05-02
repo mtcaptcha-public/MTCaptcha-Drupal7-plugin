@@ -4,22 +4,17 @@
  * @file
  * Provides the MTCaptcha administration settings.
  */
-
 function mtcaptcha_admin_settings() {
-  $form['mtcaptcha_general_settings'] = array(
+  $form['common'] = array(
     '#type' => 'fieldset',
-    '#title' => t('General settings'),
-  );
+    '#title' => t('MTCaptcha Common Settings'),
+    '#description' => t('<b>You have to <a href="@url" target="blank" rel="external">register your domain</a> first, get the private key from MTCaptcha and save it below.</b>'
+    , array('@url' => 'https://www.mtcaptcha.com/pricing/')),
+    '#collapsible' => TRUE,
+    '#collapsed' => FALSE,
+  );  
 
-  $form['mtcaptcha_general_settings']['mtcaptcha_site_key'] = array(
-    '#type' => 'textfield',
-    '#title' => t('Site key'),
-    '#default_value' => variable_get('mtcaptcha_site_key', ''),
-    '#maxlength' => 40,
-    '#description' => t('The site key given to you when you <a href="@url">register for mtcaptcha</a>.', array('@url' => 'https://admin.mtcaptcha.com/signup/profile?plantype=A')),
-    '#required' => TRUE,
-  );
-  $form['mtcaptcha_general_settings']['mtcaptcha_private_key'] = array(
+  $form['common']['mtcaptcha_private_key'] = array(
     '#type' => 'textfield',
     '#title' => t('Private key'),
     '#default_value' => variable_get('mtcaptcha_private_key', ''),
@@ -28,21 +23,72 @@ function mtcaptcha_admin_settings() {
     '#required' => TRUE,
   );
 
-  $form['mtcaptcha_widget_settings'] = array(
+  $form['common']['mtcaptcha_enablecaptcha'] = array(
+    "#type" => "select",
+    "#title" => t("Enable MTCaptcha for"),
+    "#options" => array(
+      "all" => t("All Users"),
+      "login" => t("Logged In Users"),
+      "logout" => t("Logged Out Users"),      
+    ),    
+    "#default_value" => variable_get('mtcaptcha_enablecaptcha', "all"),
+    "#description" => t('<br> The MTCaptcha will be embedded in Login Form and
+    Reset Password Form <br>even though the Enable MTCaptcha is selected for logged  in users. If needed <br>we can disable MTCaptcha for these forms by choosing below options.')
+  );
+  $form_ids = array(
+    'user_login' => t('Login Form'),
+    'user_register_form' => t('Registration Form'), 
+    'user_pass' => t('Lost Password Form'),
+    'user_profile_form' => t('Change Password Form'),
+    'comment_node_article_form' => t('Comment Form'),
+    'contact_site_form' => t('Contact Form')
+  );
+  $form['common']['mtcaptcha_enable'] = array(
+    '#title' => t('MTCaptcha is applied for'),
+    '#type' => 'checkboxes',
+    '#default_value' => variable_get('mtcaptcha_enable', array_keys($form_ids)),
+    '#description' => t('Please enable MTCaptcha for above forms'),
+    '#options' => $form_ids,
+  );
+
+  $form['common']['mtcaptcha_other_enable'] = array(
+    '#type' => 'textfield',
+    '#title' => t('Other Forms to enable'),
+    '#default_value' => variable_get('mtcaptcha_other_enable', ''),
+    '#description' => t('Please give other form ids mtcaptcha should be enabled'),
+    '#maxlength' => 400,
+  );
+
+  $form['common']['show_captcha_label_form'] = array(
+    '#type' => 'checkbox',
+    '#title' => t('Show Captcha label in the form'),
+    '#default_value' => variable_get('show_captcha_label_form', FALSE),
+    '#description' => t('Show or Hide Captcha Label in the forms'), 
+    '#attributes' => array(
+      'class' => array('captcha-label'), 
+    )   
+  );
+
+
+  $form['general'] = array(
     '#type' => 'fieldset',
-    '#title' => t('Widget settings'),
+    '#title' => t('MTCaptcha Basic Options'),
+    '#description' => t('<b>You have to <a href="@url" target="blank" rel="external">register your domain</a> first, get the site key from MTCaptcha and save it below.</b>'
+    , array('@url' => 'https://www.mtcaptcha.com/pricing/')),
     '#collapsible' => TRUE,
     '#collapsed' => FALSE,
   );
 
-  $form['mtcaptcha_widget_settings']['show_captcha_label_form'] = array(
-    '#title' => t('Show Captcha label in the form'),
-    '#type' => 'checkbox',
-    '#default_value' => TRUE,
-    '#description' => t('Show or Hide Captcha Label in the forms')    
+  $form['general']['mtcaptcha_site_key'] = array(
+    '#type' => 'textfield',
+    '#title' => t('Site key'),
+    '#default_value' => variable_get('mtcaptcha_site_key', ''),
+    '#maxlength' => 40,
+    '#description' => t('The site key given to you when you <a href="@url">register for mtcaptcha</a>.', array('@url' => 'https://admin.mtcaptcha.com/signup/profile?plantype=A')),
+    // '#required' => TRUE,
   );
-
-  $form['mtcaptcha_widget_settings']['mtcaptcha_theme'] = array(
+  
+  $form['general']['mtcaptcha_theme'] = array(
     '#type' => 'select',
     '#title' => t('Theme'),
     '#description' => t('Defines which theme to use for mtcaptcha.'),
@@ -61,10 +107,10 @@ function mtcaptcha_admin_settings() {
     ),
     '#default_value' => variable_get('mtcaptcha_theme', 'standard'),
   );
-  $form['mtcaptcha_widget_settings']['mtcaptcha_language'] = array(
+  $form['general']['mtcaptcha_language'] = array(
     '#type' => 'select',
     '#title' => t('Language'),
-    '#description' => t('Language the labels need to be displayed.'),
+    '#description' => t('Defines which Language to use for mtcaptcha.'),
     '#options' => array(
       'en' => t('English(en)'),
       'ar' => t('Arabic(ar)'),
@@ -132,7 +178,7 @@ function mtcaptcha_admin_settings() {
     ),
     '#default_value' => variable_get('mtcaptcha_language', 'en'),
   );
-  $form['mtcaptcha_widget_settings']['mtcaptcha_widgetsize'] = array(
+  $form['general']['mtcaptcha_widgetsize'] = array(
     '#title' => t('Captcha Widget size'),
     '#type' => 'select',
     '#options' => array(
@@ -142,44 +188,48 @@ function mtcaptcha_admin_settings() {
     '#default_value' => variable_get('mtcaptcha_widgetsize'),
     '#description' => t('Defines which widgetsize to use for mtcaptcha.'),
   );
-  $form['mtcaptcha_widget_settings']['mtcaptcha_enablecaptcha'] = array(
-    "#type" => "select",
-    "#title" => t("Enable MTCaptcha for"),
-    "#options" => array(
-      "all" => t("All Users"),
-      "login" => t("Logged In Users"),
-      "logout" => t("Logged Out Users"),      
-    ),    
-    "#default_value" => variable_get('mtcaptcha_enablecaptcha', "all"),
-    "#description" => t('<br> The MTCaptcha will be embedded in Login Form <br> and 
-    Reset Password Form even though the Enable MTCaptcha is selected for logged <br> in users. If needed we can disable 
-    MTCaptcha for these forms by choosing below options')
-  );
+  
 
-  $form_ids = array(
-    'user_login' => t('Login Form'),
-    'user_register_form' => t('Registration Form'), 
-    'user_pass' => t('Reset Password Form'),
-    'user_profile_form' => t('Change Password Form'),
-    'comment_node_article_form' => t('Comment Form'),
-    'contact_site_form' => t('Contact Form')
-  );
+  $form['advanced'] = [
+    '#type' => 'fieldset',
+    '#title' => t('MTCaptcha Advanced Options'),
+    '#collapsible' => TRUE,
+    '#collapsed' => FALSE,    
+  ];
 
-  $form['mtcaptcha_widget_settings']['mtcaptcha_enable'] = array(
-    '#title' => t('MTCaptcha is applied for'),
-    '#type' => 'checkboxes',
-    '#default_value' => variable_get('mtcaptcha_enable', array_keys($form_ids)),
-    '#description' => t('Please enable MTCaptcha for above forms'),
-    '#options' => $form_ids,
-  );
+  $form['advanced']['custom_config_enable'] = [
+    '#title' =>  t('Enable custom MTCaptcha configuration '),
+    '#type' => 'checkbox',
+    '#default_value' => variable_get('custom_config_enable'),
+    '#description' => t('Provides the custom configuration to render the MTCaptcha in your forms.<br/> 
+                        1. You have to <a href="https://www.mtcaptcha.com/pricing/" target="blank" rel="external">register your domain</a> and get your required keys.<br/>
+                        2. Visit <a href="http://service.mtcaptcha.com/mtcv1/demo/" target="blank" rel="external">MTCaptcha demo page</a> to customize 
+                        the MTCaptcha configuration.<br/> 
+                        3. Customize the <b>Basic Options</b>, <b>Custom Style</b> and <b>Custom Language</b>.<br/>
+                        4. Click on Apply button to view the changes. <br/>
+                        5. If the changes are looks good, 
+                        then copy the snippet located inside the <b>script</b> tag under <b>Embed Snippet</b> tab.
+                        <br/>
+                        6. Paste the copied snippet to the below textbox. <br/> '),
+    '#attributes' => array(
+          'class' => array('captcha-label'), 
+    )    
+  ];
 
-  $form['mtcaptcha_widget_settings']['mtcaptcha_other_enable'] = array(
-    '#type' => 'textfield',
-    '#title' => t('Other Forms to enable'),
-    '#default_value' => variable_get('mtcaptcha_other_enable', ''),
-    '#description' => t('Please give other form ids mtcaptcha should be enabled'),
-    '#maxlength' => 400,
-  );
-
+  $form['advanced']['custom_config_setting'] = [
+    '#default_value' => variable_get('custom_config_setting'),
+    '#required' => FALSE,
+    '#type' => 'textarea',
+    '#attributes' => array('placeholder' => t("var mtcaptchaConfig = {
+      'sitekey': 'YOUR SITE KEY',
+      'widgetSize': 'mini',
+      'lang': 'en',
+      'autoFormValidate': true,
+      'loadAnimation': true,
+     };
+   (function(){var mt_service = document.createElement('script');mt_service.async = true;mt_service.src = 'https://service.mtcaptcha.com/mtcv1/client/mtcaptcha.min.js';(document.getElementsByTagName('head')[0] || document.getElementsByTagName('body')[0]).appendChild(mt_service);
+   var mt_service2 = document.createElement('script');mt_service2.async = true;mt_service2.src = 'https://service2.mtcaptcha.com/mtcv1/client/mtcaptcha2.min.js';(document.getElementsByTagName('head')[0] || document.getElementsByTagName('body')[0]).appendChild(mt_service2);}) ();"),) 
+  ];
   return system_settings_form($form);
 }
+?>
