@@ -143,7 +143,6 @@ function mtcaptcha_render(&$form, &$form_state, $form_id) {
           'sitekey' => $mtcaptcha_site_key,
           'theme' => variable_get('mtcaptcha_theme', ''),
           "autoFormValidate"  => (bool)true,
-          "renderQueue"       => $GLOBALS['_configIdList'],  
           "widgetSize"        => variable_get('mtcaptcha_widgetsize', ''),
           'lang' => variable_get('mtcaptcha_language', '')
           )),
