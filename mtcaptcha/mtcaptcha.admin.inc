@@ -8,7 +8,7 @@ function mtcaptcha_admin_settings() {
   $form['common'] = array(
     '#type' => 'fieldset',
     '#title' => t('MTCaptcha Common Settings'),
-    '#description' => t('<b>You have to <a href="@url" target="blank" rel="external">register your domain</a> first, get the private key from MTCaptcha and save it below.</b>'
+    '#description' => t('<b>You have to <a href="@url" target="blank"  rel="external">register your domain</a> first, get the private key from MTCaptcha and save it below.</b>'
     , array('@url' => 'https://www.mtcaptcha.com/pricing/')),
     '#collapsible' => TRUE,
     '#collapsed' => FALSE,
@@ -19,7 +19,7 @@ function mtcaptcha_admin_settings() {
     '#title' => t('Private key'),
     '#default_value' => variable_get('mtcaptcha_private_key', ''),
     '#maxlength' => 128,
-    '#description' => t('The private key given to you when you <a href="@url">register for mtcaptcha</a>.', array('@url' => 'https://admin.mtcaptcha.com/signup/profile?plantype=A')),
+    '#description' => t('The private key given to you when you <a href="@url" target="blank" >register for mtcaptcha</a>.', array('@url' => 'https://admin.mtcaptcha.com/signup/profile?plantype=A')),
     '#required' => TRUE,
   );
 
@@ -84,7 +84,7 @@ function mtcaptcha_admin_settings() {
     '#title' => t('Site key'),
     '#default_value' => variable_get('mtcaptcha_site_key', ''),
     '#maxlength' => 40,
-    '#description' => t('The site key given to you when you <a href="@url">register for mtcaptcha</a>.', array('@url' => 'https://admin.mtcaptcha.com/signup/profile?plantype=A')),
+    '#description' => t('The site key given to you when you <a href="@url" target="blank">register for mtcaptcha</a>.', array('@url' => 'https://admin.mtcaptcha.com/signup/profile?plantype=A')),
     // '#required' => TRUE,
   );
   
@@ -203,15 +203,16 @@ function mtcaptcha_admin_settings() {
     '#default_value' => variable_get('custom_config_enable'),
     '#description' => t('Provides the custom configuration to render the MTCaptcha in your forms.<br/> 
                         1. You have to <a href="https://www.mtcaptcha.com/pricing/" target="blank" rel="external">register your domain</a> and get your required keys.<br/>
-                        2. Visit <a href="http://service.mtcaptcha.com/mtcv1/demo/" target="blank" rel="external">MTCaptcha demo page</a> to customize 
+                        2. Visit <a href="https://service.mtcaptcha.com/mtcv1/demo/" target="blank" rel="external">MTCaptcha demo page</a> to customize 
                         the MTCaptcha configuration.<br/> 
                         3. Under Basic Options, Proivde your site key in the Sitekey field. <br/>
-                        4. Customize the <b>Basic Options</b>, <b>Custom Style</b> and <b>Custom Language</b>.<br/>
-                        5. Click on Apply button to view the changes. <br/>
-                        6. If the changes are looks good, 
+                        4. Select the <b>Render Type as "explicit" </b>in the test page.<br/>
+                        5. Customize the <b>Basic Options</b>, <b>Custom Style</b> and <b>Custom Language</b>.<br/>
+                        6. Click on Apply button to view the changes. <br/>
+                        7. If the changes are looks good, 
                         then copy the snippet located inside the <b>script</b> tag under <b>Embed Snippet</b> tab.
                         <br/>
-                        7. Paste the copied snippet to the below textbox. <br/> '),
+                        8. Paste the copied snippet to the below textbox. <br/> '),
     '#attributes' => array(
           'class' => array('captcha-label'), 
     )    
@@ -221,15 +222,17 @@ function mtcaptcha_admin_settings() {
     '#default_value' => variable_get('custom_config_setting'),
     '#required' => FALSE,
     '#type' => 'textarea',
-    '#attributes' => array('placeholder' => t("var mtcaptchaConfig = {
-      'sitekey': 'YOUR SITE KEY',
-      'widgetSize': 'mini',
-      'lang': 'en',
-      'autoFormValidate': true,
-      'loadAnimation': true,
+    '#attributes' => array('placeholder' => t('var mtcaptchaConfig = {
+      "sitekey": "YOUR SITE KEY",
+      "widgetSize": "mini",
+      "lang": "en",
+      "autoFormValidate": true,
+      "loadAnimation": true,
+      "render": "explicit",
+      "renderQueue":[]
      };
-   (function(){var mt_service = document.createElement('script');mt_service.async = true;mt_service.src = 'https://service.mtcaptcha.com/mtcv1/client/mtcaptcha.min.js';(document.getElementsByTagName('head')[0] || document.getElementsByTagName('body')[0]).appendChild(mt_service);
-   var mt_service2 = document.createElement('script');mt_service2.async = true;mt_service2.src = 'https://service2.mtcaptcha.com/mtcv1/client/mtcaptcha2.min.js';(document.getElementsByTagName('head')[0] || document.getElementsByTagName('body')[0]).appendChild(mt_service2);}) ();"),) 
+   (function(){var mt_service = document.createElement("script");mt_service.async = true;mt_service.src = "https://service.mtcaptcha.com/mtcv1/client/mtcaptcha.min.js";(document.getElementsByTagName("head")[0] || document.getElementsByTagName("body")[0]).appendChild(mt_service);
+   var mt_service2 = document.createElement("script");mt_service2.async = true;mt_service2.src = "https://service.mtcaptcha.com/mtcv1/client/mtcaptcha2.min.js";(document.getElementsByTagName("head")[0] || document.getElementsByTagName("body")[0]).appendChild(mt_service2);}) ();'),) 
   ];
   return system_settings_form($form);
 }

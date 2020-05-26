@@ -7,6 +7,7 @@
 
 use Drupal\Core\Form\FormStateInterface;
 
+$configIdList = [];
 
 /**
  * Implements hook_help().
@@ -62,8 +63,13 @@ function mtcaptcha_permission() {
   );
 }
 
+function mtcaptcha_init() {  
+  $GLOBALS['configIdList'] = isset($GLOBALS['configIdList']) ? $GLOBALS['configIdList'] : [];  
+}
 
-function mtcaptcha_form_alter(&$form, &$form_state, $form_id) {
+
+function mtcaptcha_form_alter(&$form, &$form_state, $form_id) {  
+  
   $mtcaptcha_other_enable = preg_split('/\s*,\s*/', trim(variable_get('mtcaptcha_other_enable', '')));
   $enabled_forms = array_values(array_merge($mtcaptcha_other_enable, variable_get('mtcaptcha_enable', [])));
   
@@ -74,15 +80,13 @@ function mtcaptcha_form_alter(&$form, &$form_state, $form_id) {
     return false;
    }
 
-  if(!$user->uid && $form_id == 'user_login' && in_array($form_id, $enabled_forms, TRUE) ){
-    mtcaptcha_render($form, $form_state, $form_id);
-    $form['#validate'][] = 'mtcaptcha_captcha_validation';
+  if(!$user->uid && $form_id == 'user_login' && in_array($form_id, $enabled_forms, TRUE) ){    
+    attachCaptcha($form);    
     return false;    
   }
 
-  if(!$user->uid && $form_id == 'user_pass' && in_array($form_id, $enabled_forms, TRUE) ){
-    mtcaptcha_render($form, $form_state, $form_id);
-    $form['#validate'][] = 'mtcaptcha_captcha_validation';
+  if(!$user->uid && $form_id == 'user_pass' && in_array($form_id, $enabled_forms, TRUE) ){    
+    attachCaptcha($form);    
     return false;
   }
   
@@ -90,8 +94,7 @@ function mtcaptcha_form_alter(&$form, &$form_state, $form_id) {
     (($user->uid && variable_get('mtcaptcha_enablecaptcha') == 'login') ||
     (!$user->uid &&  variable_get('mtcaptcha_enablecaptcha') == 'logout') ||
     (variable_get('mtcaptcha_enablecaptcha') == 'all'))) {      
-      mtcaptcha_render($form, $form_state, $form_id);
-      $form['#validate'][] = 'mtcaptcha_captcha_validation'; 
+      attachCaptcha($form);      
   }
 }
 
@@ -119,12 +122,14 @@ function mtcaptcha_captcha_admin_validation(&$form,  &$form_state) {
 /**
  * Implements hook_captcha().
  */
-function mtcaptcha_render(&$form, &$form_state, $form_id) {
+function mtcaptcha_render() {
   $mtcaptcha_site_key = variable_get('mtcaptcha_site_key', '');
   $mtcaptcha_private_key = variable_get('mtcaptcha_private_key','');
-  
-  if (!empty($mtcaptcha_site_key) && !empty($mtcaptcha_private_key)) {
-    $custome_config_enble = variable_get('custom_config_enable');
+  $custome_config_enble = variable_get('custom_config_enable');
+
+  if (((empty($custome_config_enble) && !empty($mtcaptcha_site_key))|| 
+    !empty($custome_config_enble)) &&  !empty($mtcaptcha_private_key)) {
+    
     if($custome_config_enble == TRUE) {    
       $script = array(
         '#tag' => 'script',
@@ -132,9 +137,12 @@ function mtcaptcha_render(&$form, &$form_state, $form_id) {
         '#value' => variable_get('custom_config_setting')
       );      
       drupal_add_html_head($script, 'script');
-    }else {
+
+      updateRenderQueue();      
+    } else {
       $mtcaptcha_src = 'https://service.mtcaptcha.com/mtcv1/client/mtcaptcha.min.js';
-      $mtcaptcha_src_2 = 'https://service2.mtcaptcha.com/mtcv1/client/mtcaptcha.min.js';
+      $mtcaptcha_src_2 = 'https://service.mtcaptcha.com/mtcv1/client/mtcaptcha2.min.js';
+      $GLOBALS['configIdList'] = isset($GLOBALS['configIdList']) ? $GLOBALS['configIdList'] : [];
       $script = array(
         '#tag' => 'script',
         '#attributes' => array('type' => 'text/javascript'),
@@ -143,6 +151,8 @@ function mtcaptcha_render(&$form, &$form_state, $form_id) {
           'sitekey' => $mtcaptcha_site_key,
           'theme' => variable_get('mtcaptcha_theme', ''),
           "autoFormValidate"  => (bool)true,
+          "render"      => "explicit",
+          "renderQueue"       => $GLOBALS['configIdList'],
           "widgetSize"        => variable_get('mtcaptcha_widgetsize', ''),
           'lang' => variable_get('mtcaptcha_language', '')
           )),
@@ -170,22 +180,7 @@ function mtcaptcha_render(&$form, &$form_state, $form_id) {
         );
         drupal_add_html_head($data, 'mtcpatcha_api');
         drupal_add_html_head($data2, 'mtcpatcha_api_2');
-    }
-
-    $show_label = variable_get('show_captcha_label_form');   
-
-    if($show_label== TRUE) {
-      $form['captcha'] = array(
-        '#required' => TRUE,
-        '#markup' => '<label>' . t('Captcha<span class="red">*</span>') . '</label><div class="mtcaptcha"></div>'
-      );
-    } else {
-      $form['captcha'] = array(
-        '#required' => TRUE,
-        '#markup' => '<div class="mtcaptcha"></div>'
-      );
-    }
-   
+    }       
   }
 }
 
@@ -252,4 +247,71 @@ function mtcaptcha_submit_captcha($mt_captcha_site_private_key, $mtcaptcha_verif
     return $response->data;
   }
 }
+
+ /**
+ * Method to push generated random id in renderedQueue
+ * @param $randomId
+ */
+function pushTorenderQueue($randomId) {
+  $GLOBALS['configIdList'] = isset($GLOBALS['configIdList']) ? $GLOBALS['configIdList'] : [];  
+  array_push($GLOBALS['configIdList'], $randomId);
+  mtcaptcha_render();  
+  ?>
+  <script type="text/javascript">
+        if (typeof mtcaptchaConfig != "undefined") {         
+          // push the random id in render queue
+          mtcaptchaConfig.renderQueue.push(<?php echo "'$randomId'" ?>);          
+        }        
+  </script><?php
+}
+
+
+/**
+ * Method to attach the captcha form to form fields..
+ * @param $form
+ */
+function attachCaptcha(&$form) {  
+  $form['#validate'][] = 'mtcaptcha_captcha_validation';
+  $markup = '';
+  $randomId = "mtcaptcha-" . strval(rand());    
+  pushTorenderQueue($randomId);
+  $markup = '<div id="' . $randomId . '"></div>';
+  if(variable_get('show_captcha_label_form') == TRUE) {
+    $form['captcha'] = array(
+      '#required' => TRUE,
+      '#markup' => '<label>' . t('Captcha<span class="red">*</span>') . '</label>' . $markup
+    );
+  } else {
+    $form['captcha'] = array(
+      '#required' => TRUE,
+      '#markup' => $markup
+    );
+  }
+  return $form;
+}
+
+ /**
+ * Method to push generated random id in renderedQueue
+ * @param $randomId
+ */
+function updateRenderQueue() {  
+  foreach($GLOBALS['configIdList'] as $configIdList) {    
+  ?>
+  <script type="text/javascript" >   
+        setTimeout(function(){
+          if (typeof mtcaptchaConfig != "undefined") {            
+            if(mtcaptchaConfig.renderQueue.length == 0) {
+              mtcaptchaConfig.renderQueue = [];
+            }            
+            if(mtcaptchaConfig.renderQueue.indexOf(<?php echo "'$configIdList'" ?>) == -1 ){              
+              mtcaptchaConfig.renderQueue.push(<?php echo "'$configIdList'" ?>);
+            }
+          }
+         });
+  </script>  
+  <?php
+  }
+}
+?>
+
 
