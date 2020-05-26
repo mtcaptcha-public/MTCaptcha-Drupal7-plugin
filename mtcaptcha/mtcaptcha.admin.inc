@@ -93,7 +93,7 @@ function mtcaptcha_admin_settings() {
     '#title' => t('Theme'),
     '#description' => t('Defines which theme to use for mtcaptcha.'),
     '#options' => array(
-      'standard' => t('standard'),
+      'basic' => t('basic'),
       'overcast' => t('overcast'),
       'neowhite' => t('neowhite'),
       'goldbezel' => t('goldbezel'),
@@ -105,7 +105,7 @@ function mtcaptcha_admin_settings() {
       'chrome' => t('chrome'),
       'highcontrast' => t('highcontrast'),
     ),
-    '#default_value' => variable_get('mtcaptcha_theme', 'standard'),
+    '#default_value' => variable_get('mtcaptcha_theme', 'basic'),
   );
   $form['general']['mtcaptcha_language'] = array(
     '#type' => 'select',
