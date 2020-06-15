@@ -1,11 +1,11 @@
 name = MTCaptcha
 description = Protect your website from spam and abuse while letting real people pass through with ease. 
-version = 2.1
+version = 2.2
 core = 7.x
 package = Spam control
 configure = admin/config/mtcaptcha
 php = 5.5
-scripts[] = mtcaptcha-global.js
-stylesheets[all][] = mtcaptcha-global.css
+scripts[] = mtcaptcha-admin.js
+stylesheets[all][] = mtcaptcha-admin.css
 
 

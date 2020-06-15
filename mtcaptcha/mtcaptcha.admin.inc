@@ -59,13 +59,13 @@ function mtcaptcha_admin_settings() {
     '#maxlength' => 400,
   );
 
-  $form['common']['show_captcha_label_form'] = array(
+  $form['common']['mtcaptcha_show_captcha_label_form'] = array(
     '#type' => 'checkbox',
     '#title' => t('Show Captcha label in the form'),
-    '#default_value' => variable_get('show_captcha_label_form', FALSE),
+    '#default_value' => variable_get('mtcaptcha_show_captcha_label_form', FALSE),
     '#description' => t('Show or Hide Captcha Label in the forms'), 
     '#attributes' => array(
-      'class' => array('captcha-label'), 
+      'class' => array('mtcaptcha-captcha-label'), 
     )   
   );
 
@@ -197,10 +197,10 @@ function mtcaptcha_admin_settings() {
     '#collapsed' => FALSE,    
   ];
 
-  $form['advanced']['custom_config_enable'] = [
+  $form['advanced']['mtcaptcha_custom_config_enable'] = [
     '#title' =>  t('Enable custom MTCaptcha configuration '),
     '#type' => 'checkbox',
-    '#default_value' => variable_get('custom_config_enable'),
+    '#default_value' => variable_get('mtcaptcha_custom_config_enable'),
     '#description' => t('Provides the custom configuration to render the MTCaptcha in your forms.<br/> 
                         1. You have to <a href="https://www.mtcaptcha.com/pricing/" target="blank" rel="external">register your domain</a> and get your required keys.<br/>
                         2. Visit <a href="https://service.mtcaptcha.com/mtcv1/demo/" target="blank" rel="external">MTCaptcha demo page</a> to customize 
@@ -218,9 +218,9 @@ function mtcaptcha_admin_settings() {
     )    
   ];
 
-  $form['advanced']['custom_config_setting'] = [
-    '#default_value' => variable_get('custom_config_setting'),
-    '#required' => FALSE,
+  $form['advanced']['mtcaptcha_custom_config_setting'] = [
+    '#default_value' => variable_get('mtcaptcha_custom_config_setting'),
+    // '#required' => FALSE,
     '#type' => 'textarea',
     '#attributes' => array('placeholder' => t('var mtcaptchaConfig = {
       "sitekey": "YOUR SITE KEY",
